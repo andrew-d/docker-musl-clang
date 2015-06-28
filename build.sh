@@ -112,12 +112,14 @@ function use_new_clang() {
         --install /usr/bin/clang        clang        /opt/clang-3.6/bin/clang     50      \
         --slave   /usr/bin/clang++      clang++      /opt/clang-3.6/bin/clang++           \
         --slave   /usr/bin/clang-check  clang-check  /opt/clang-3.6/bin/clang-check       \
-        --slave   /usr/bin/clang-query  clang-query  /opt/clang-3.6/bin/clang-query       \
-        --slave   /usr/bin/clang-tblgen clang-tblgen /opt/clang-3.6/bin/clang-tblgen      \
         --slave   /usr/bin/clang-tidy   clang-tidy   /opt/clang-3.6/bin/clang-tidy        \
-        --slave   /usr/bin/llvm-config  llvm-config  /opt/clang-3.6/bin/llvm-config       \
-        --slave   /usr/bin/scan-build   scan-build   /opt/clang-3.6/bin/scan-build        \
-        --slave   /usr/bin/scan-view    scan-view    /opt/clang-3.6/bin/scan-view
+        --slave   /usr/bin/llvm-config  llvm-config  /opt/clang-3.6/bin/llvm-config
+
+    # TODO: figure out how to build/install these?
+    #    --slave   /usr/bin/clang-query  clang-query  /opt/clang-3.6/bin/clang-query       \
+    #    --slave   /usr/bin/clang-tblgen clang-tblgen /opt/clang-3.6/bin/clang-tblgen      \
+    #    --slave   /usr/bin/scan-build   scan-build   /opt/clang-3.6/bin/scan-build        \
+    #    --slave   /usr/bin/scan-view    scan-view    /opt/clang-3.6/bin/scan-view
 }
 
 function doit() {
