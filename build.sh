@@ -15,17 +15,17 @@ deb-src http://llvm.org/apt/jessie/ llvm-toolchain-jessie-3.6 main
 EOF
 
     apt-get update
-    DEBIAN_FRONTEND=noninteractive apt-get upgrade -yy
-    DEBIAN_FRONTEND=noninteractive apt-get install -yy \
+    DEBIAN_FRONTEND=noninteractive apt-get upgrade -qyy
+    DEBIAN_FRONTEND=noninteractive apt-get install -qyy \
         automake            \
         bison               \
+        build-essential     \
         clang-3.6           \
         cmake               \
         curl                \
         file                \
         flex                \
         git                 \
-        lldb-3.6            \
         ninja-build         \
         pkg-config          \
         python              \
@@ -42,7 +42,6 @@ EOF
         --slave   /usr/bin/clang-query  clang-query  /usr/bin/clang-query-3.6       \
         --slave   /usr/bin/clang-tblgen clang-tblgen /usr/bin/clang-tblgen-3.6      \
         --slave   /usr/bin/clang-tidy   clang-tidy   /usr/bin/clang-tidy-3.6        \
-        --slave   /usr/bin/lldb         lldb         /usr/bin/lldb-3.6              \
         --slave   /usr/bin/llvm-config  llvm-config  /usr/bin/llvm-config-3.6       \
         --slave   /usr/bin/scan-build   scan-build   /usr/bin/scan-build-3.6        \
         --slave   /usr/bin/scan-view    scan-view    /usr/bin/scan-view-3.6
@@ -84,18 +83,48 @@ function build_llvm() {
 
     patch -Np1 -i /root/llvm-musl.patch
 
-    mkdir -p build
-    cd build
+    mkdir -p llvm-build
+    cd llvm-build
 
     # Note: the targets we build are the ones that musl supports
-    cmake ../llvm -G Ninja -DCMAKE_BUILD_TYPE=Release "-DLLVM_TARGETS_TO_BUILD=X86;ARM;Mips;PowerPC" -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
-    ninja
+    cmake ../llvm -G Ninja                              \
+        -DCMAKE_BUILD_TYPE=Release                      \
+        "-DLLVM_TARGETS_TO_BUILD=X86;ARM;Mips;PowerPC"  \
+        -DCMAKE_C_COMPILER=clang                        \
+        -DCMAKE_CXX_COMPILER=clang++                    \
+        -DCMAKE_INSTALL_PREFIX=/opt/clang-3.6
+
+    # Build and install
+    cmake --build .
+    cmake --build . --target install
+}
+
+function use_new_clang() {
+    # Remove old alternative for the installed clang-3.6 package
+    update-alternatives --remove clang /usr/bin/clang-3.6
+
+    # Remove clang-3.6 and all associated packages
+    DEBIAN_FRONTEND=noninteractive apt-get purge -qyy clang-3.6
+    DEBIAN_FRONTEND=noninteractive apt-get autoremove -qyy
+
+    # Use our newly-built clang-3.6 as default clang + tools
+    update-alternatives \
+        --install /usr/bin/clang        clang        /opt/clang-3.6/bin/clang     50      \
+        --slave   /usr/bin/clang++      clang++      /opt/clang-3.6/bin/clang++           \
+        --slave   /usr/bin/clang-check  clang-check  /opt/clang-3.6/bin/clang-check       \
+        --slave   /usr/bin/clang-query  clang-query  /opt/clang-3.6/bin/clang-query       \
+        --slave   /usr/bin/clang-tblgen clang-tblgen /opt/clang-3.6/bin/clang-tblgen      \
+        --slave   /usr/bin/clang-tidy   clang-tidy   /opt/clang-3.6/bin/clang-tidy        \
+        --slave   /usr/bin/llvm-config  llvm-config  /opt/clang-3.6/bin/llvm-config       \
+        --slave   /usr/bin/scan-build   scan-build   /opt/clang-3.6/bin/scan-build        \
+        --slave   /usr/bin/scan-view    scan-view    /opt/clang-3.6/bin/scan-view
 }
 
 function doit() {
     install_packages
     build_musl
     build_llvm
+    use_new_clang
 
     install -m 0755 /root/musl-clang /usr/bin/musl-clang
 }
