@@ -46,6 +46,10 @@ EOF
         --slave   /usr/bin/llvm-config  llvm-config  /usr/bin/llvm-config-3.6       \
         --slave   /usr/bin/scan-build   scan-build   /usr/bin/scan-build-3.6        \
         --slave   /usr/bin/scan-view    scan-view    /usr/bin/scan-view-3.6
+
+    # Use clang as the default compiler.
+    update-alternatives --set cc  /usr/bin/clang
+    update-alternatives --set c++ /usr/bin/clang++
 }
 
 function build_musl() {
@@ -62,23 +66,30 @@ function build_musl() {
     make install
 }
 
-function build_compiler_rt() {
+function build_llvm() {
     cd /root
 
-    git clone --depth 1 -b release_36 https://github.com/llvm-mirror/compiler-rt
-    cd compiler-rt
-    patch -p4 < /root/compiler-rt-musl.patch
+    if [ ! -d llvm ]
+    then
+        git clone --depth 1 -b release_36 https://github.com/llvm-mirror/llvm
+        git clone --depth 1 -b release_36 https://github.com/llvm-mirror/clang llvm/tools/clang
+        git clone --depth 1 -b release_36 https://github.com/llvm-mirror/compiler-rt llvm/projects/compiler-rt
+    fi
 
-    cd /root
-    mkdir compiler-rt-build && cd compiler-rt-build
-    cmake ../compiler-rt -DLLVM_CONFIG_PATH=$(which llvm-config)
-    make
+    patch -Np1 -i /root/llvm-musl.patch
+
+    mkdir -p build
+    cd build
+
+    # Note: the targets we build are the ones that musl supports
+    cmake ../llvm -G Ninja -DCMAKE_BUILD_TYPE=Release -DLLVM_TARGETS_TO_BUILD=X86;ARM;Mips;PowerPC -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+    ninja
 }
 
 function doit() {
     install_packages
     build_musl
-    build_compiler_rt
+    build_llvm
 
     install -m 0755 /root/musl-clang /usr/bin/musl-clang
 }
