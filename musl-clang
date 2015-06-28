@@ -1,0 +1,105 @@
+#!/bin/sh
+#
+# musl-clang: A clang wrapper for musl C library.
+#             Supports static linking. (-static)
+#
+# WARNING: This is not a perfect drop-in replacement
+#
+# See LICENSE file for copyright and license details.
+#
+# MIT/X Consortium License
+#
+# © 2015 Eon S. Jeon <esjeon@hyunmu.am>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+# DEALINGS IN THE SOFTWARE.
+#
+# (file taken from: https://raw.githubusercontent.com/esjeon/musl-clang/79dd72543de7db279d80b80ea7b642b0927557b8/musl-clang)
+
+PREFIX=${MUSL_PREFIX:-"/usr/local/musl"}
+if [ ! -d "${PREFIX}" ]; then
+	echo "invalid prefix: ${PREFIX}"
+	return 1
+fi
+
+CPP=no
+case "$0" in
+	*++) CPP=yes ;;
+esac
+
+if [ "${CPP}" = "yes" ]; then
+	CLANG=${REALCLANGPP:-"clang++"}
+else
+	CLANG=${REALCLANG:-"clang"}
+fi
+
+hasNo() {
+	pat="$1"
+	shift 1
+
+	for e in "$@"; do
+		if [ "$e" = "${pat}" ]; then
+			return 1
+		fi
+	done
+	return 0
+}
+
+ARGS="-nostdinc"
+TAIL=""
+
+if hasNo '-nostdinc' "$@"; then
+	ARGS="${ARGS} -isystem ${PREFIX}/include"
+fi
+
+if \
+	hasNo '-c' "$@" && \
+	hasNo '-S' "$@" && \
+	hasNo '-E' "$@"
+then
+	ARGS="${ARGS} -nostdlib"
+	ARGS="${ARGS} -Wl,-dynamic-linker=${PREFIX}/lib/libc.so"
+	ARGS="${ARGS} -L${PREFIX}/lib"
+	#ARGS="${ARGS} -Wl,-rpath=${PREFIX}/lib"
+
+	if hasNo '-nostartfiles' "$@" && \
+	   hasNo '-nostdlib' "$@" && \
+	   hasNo '-nodefaultlibs' "$@"
+	then
+		ARGS="${ARGS} ${PREFIX}/lib/crt1.o"
+		ARGS="${ARGS} ${PREFIX}/lib/crti.o"
+
+		TAIL="${TAIL} ${PREFIX}/lib/crtn.o"
+	fi
+
+	if hasNo '-nostdlib' "$@" && \
+	   hasNo '-nodefaultlibs' "$@"
+	then
+		if [ "${CPP}" = "yes" ]; then
+			TAIL="${TAIL} -lc++"
+			TAIL="${TAIL} -lunwind"
+			TAIL="${TAIL} -lm"
+		fi
+		TAIL="${TAIL} -lc"
+		#TAIL="${TAIL} -Wl,-Bstatic -lcompiler_rt"
+	fi
+fi
+
+#echo "# $0" "$@" >&2
+#set -x
+exec ${CLANG} ${ARGS} "$@" ${TAIL}

@@ -1,0 +1,33 @@
+--- a/llvm/projects/compiler-rt/lib/interception/interception_linux.cc
++++ b/llvm/projects/compiler-rt/lib/interception/interception_linux.cc
+@@ -24,7 +24,7 @@
+   return real == wrapper;
+ }
+ 
+-#if !defined(__ANDROID__)  // android does not have dlvsym
++#if 0
+ void *GetFuncAddrVer(const char *func_name, const char *ver) {
+   return dlvsym(RTLD_NEXT, func_name, ver);
+ }
+--- a/llvm/projects/compiler-rt/lib/lsan/lsan_common.cc
++++ b/llvm/projects/compiler-rt/lib/lsan/lsan_common.cc
+@@ -231,7 +231,7 @@
+       ForEachExtraStackRange(os_id, ForEachExtraStackRangeCb, frontier);
+     }
+ 
+-    if (flags()->use_tls) {
++    if (0) {
+       LOG_THREADS("TLS at %p-%p.\n", tls_begin, tls_end);
+       if (cache_begin == cache_end) {
+         ScanRangeForPointers(tls_begin, tls_end, frontier, "TLS", kReachable);
+--- a/llvm/projects/compiler-rt/lib/sanitizer_common/sanitizer_linux_libcdep.cc
++++ b/llvm/projects/compiler-rt/lib/sanitizer_common/sanitizer_linux_libcdep.cc
+@@ -163,7 +163,7 @@ static uptr g_tls_size;
+ #endif
+ 
+ void InitTlsSize() {
+-#if !SANITIZER_FREEBSD && !SANITIZER_ANDROID
++#if 0
+   typedef void (*get_tls_func)(size_t*, size_t*) DL_INTERNAL_FUNCTION;
+   get_tls_func get_tls;
+   void *get_tls_static_info_ptr = dlsym(RTLD_NEXT, "_dl_get_tls_static_info");
