@@ -47,6 +47,10 @@ EOF
         --slave   /usr/bin/scan-build   scan-build   /usr/bin/scan-build-3.6        \
         --slave   /usr/bin/scan-view    scan-view    /usr/bin/scan-view-3.6
 
+    # Add clang to the alternatives for cc
+    update-alternatives \
+        --install /usr/bin/cc           cc           /usr/bin/clang         50
+
     # Use clang as the default compiler.
     update-alternatives --set cc  /usr/bin/clang
     update-alternatives --set c++ /usr/bin/clang++
