@@ -69,7 +69,8 @@ function build_compiler_rt() {
     cd compiler-rt
     patch -p4 < /root/compiler-rt-musl.patch
 
-    mkdir build && cd build
+    cd /root
+    mkdir compiler-rt-build && cd compiler-rt-build
     cmake ../compiler-rt -DLLVM_CONFIG_PATH=$(which llvm-config)
     make
 }
