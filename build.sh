@@ -88,7 +88,7 @@ function build_llvm() {
     cd build
 
     # Note: the targets we build are the ones that musl supports
-    cmake ../llvm -G Ninja -DCMAKE_BUILD_TYPE=Release -DLLVM_TARGETS_TO_BUILD=X86;ARM;Mips;PowerPC -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+    cmake ../llvm -G Ninja -DCMAKE_BUILD_TYPE=Release "-DLLVM_TARGETS_TO_BUILD=X86;ARM;Mips;PowerPC" -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
     ninja
 }
 
