@@ -26,6 +26,7 @@ EOF
         file                \
         flex                \
         git                 \
+        libtool             \
         ninja-build         \
         pkg-config          \
         python              \
